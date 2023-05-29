@@ -7,10 +7,12 @@ import {SafeERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/uti
 error CallerNotBridge();
 error NotEnoughStake();
 error AlreadyBlacklisted();
+error Locked();
 
 contract BridgePool {
     using SafeERC20 for IERC20;
 
+    uint256 public constant LOCK_PERIOD = 1 days;
     uint256 public constant MINIMUM_STAKE_AMOUNT = 1000;
     uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
     uint256 public constant HUNDRED = 100;
@@ -56,6 +58,10 @@ contract BridgePool {
         address receiver,
         uint256 amount
     ) external onlyBridgeNode {
+        if (nextAvailableTimestamp[msg.sender] > block.timestamp) {
+            revert Locked();
+        }
+
         if (amount > stakes[msg.sender] / 10) {
             revert NotEnoughStake();
         }
