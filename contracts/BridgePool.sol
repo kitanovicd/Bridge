@@ -6,18 +6,29 @@ import {SafeERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/uti
 
 error CallerNotBridge();
 error NotEnoughStake();
+error AlreadyBlacklisted();
 
 contract BridgePool {
     using SafeERC20 for IERC20;
 
     uint256 public constant MINIMUM_STAKE_AMOUNT = 1000;
+    uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
+    uint256 public constant HUNDRED = 100;
+
     uint256 public totalStaked;
     IERC20 public token;
 
     mapping(address => uint256) public stakes;
+    mapping(address => uint256) public blacklistVotes;
+    mapping(address => uint256) public nextAvailableTimestamp;
 
     event Deposit(
         address indexed sender,
+        address indexed receiver,
+        uint256 indexed amount
+    );
+    event ExecuteBridge(
+        address indexed node,
         address indexed receiver,
         uint256 indexed amount
     );
@@ -41,6 +52,23 @@ contract BridgePool {
         emit Deposit(msg.sender, receiver, amount);
     }
 
+    function executeBridge(
+        address receiver,
+        uint256 amount
+    ) external onlyBridgeNode {
+        if (amount > stakes[msg.sender] / 10) {
+            revert NotEnoughStake();
+        }
+
+        uint256 fee = (amount * BRIDGE_FEE_PERCENTAGE) / HUNDRED;
+        uint256 amountAfterFee = amount - fee;
+
+        token.safeTransfer(receiver, amountAfterFee);
+        token.safeTransfer(msg.sender, fee);
+
+        emit ExecuteBridge(msg.sender, receiver, amount);
+    }
+
     function stake(uint256 amount) external {
         if (amount < MINIMUM_STAKE_AMOUNT) {
             revert NotEnoughStake();
@@ -52,5 +80,17 @@ contract BridgePool {
         totalStaked += amount;
 
         emit Stake(msg.sender, amount);
+    }
+
+    function voteToBlacklistNode(address node) external onlyBridgeNode {
+        if (stakes[node] == 0) {
+            revert AlreadyBlacklisted();
+        }
+
+        blacklistVotes[node] += stakes[msg.sender];
+
+        if (blacklistVotes[node] > totalStaked / 2) {
+            stakes[node] = 0;
+        }
     }
 }
