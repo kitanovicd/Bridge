@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import {IERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {console} from "hardhat/console.sol";
 
 error CallerNotBridge();
 error NotEnoughStake();
@@ -13,7 +14,7 @@ contract BridgePool {
     using SafeERC20 for IERC20;
 
     uint256 public constant LOCK_PERIOD = 1 days;
-    uint256 public constant MINIMUM_STAKE_AMOUNT = 1000;
+    uint256 public constant MINIMUM_STAKE_AMOUNT = 10 ether;
     uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
     uint256 public constant HUNDRED = 100;
 
@@ -35,6 +36,7 @@ contract BridgePool {
         uint256 indexed amount
     );
     event Stake(address indexed sender, uint256 indexed amount);
+    event VoteToBlacklistNode(address indexed voter, address indexed node);
 
     modifier onlyBridgeNode() {
         if (stakes[msg.sender] > 0) {
@@ -80,7 +82,7 @@ contract BridgePool {
             revert NotEnoughStake();
         }
 
-        token.safeTransfer(address(this), amount);
+        token.safeTransferFrom(msg.sender, address(this), amount);
 
         stakes[msg.sender] += amount;
         totalStaked += amount;
@@ -98,5 +100,7 @@ contract BridgePool {
         if (blacklistVotes[node] > totalStaked / 2) {
             stakes[node] = 0;
         }
+
+        emit VoteToBlacklistNode(msg.sender, node);
     }
 }

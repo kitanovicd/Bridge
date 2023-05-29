@@ -2,6 +2,8 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/contracts": "^4.9.0",
+    "chai": "^4.3.7",
+    "ethereum-waffle": "^4.0.10",
     "fs": "^0.0.1-security",
     "hardhat": "^2.14.0"
   }
