@@ -4,16 +4,32 @@ pragma solidity ^0.8.9;
 import {IERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+error CallerNotBridge();
+error NotEnoughStake();
+
 contract BridgePool {
     using SafeERC20 for IERC20;
 
+    uint256 public constant MINIMUM_STAKE_AMOUNT = 1000;
+    uint256 public totalStaked;
     IERC20 public token;
+
+    mapping(address => uint256) public stakes;
 
     event Deposit(
         address indexed sender,
         address indexed receiver,
         uint256 indexed amount
     );
+    event Stake(address indexed sender, uint256 indexed amount);
+
+    modifier onlyBridgeNode() {
+        if (stakes[msg.sender] > 0) {
+            revert CallerNotBridge();
+        }
+
+        _;
+    }
 
     constructor(address tokenAddress) {
         token = IERC20(tokenAddress);
@@ -25,7 +41,16 @@ contract BridgePool {
         emit Deposit(msg.sender, receiver, amount);
     }
 
-    function withdraw(uint256 amount) external {
-        token.transfer(msg.sender, amount);
+    function stake(uint256 amount) external {
+        if (amount < MINIMUM_STAKE_AMOUNT) {
+            revert NotEnoughStake();
+        }
+
+        token.safeTransfer(address(this), amount);
+
+        stakes[msg.sender] += amount;
+        totalStaked += amount;
+
+        emit Stake(msg.sender, amount);
     }
 }
