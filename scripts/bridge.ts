@@ -6,21 +6,34 @@ async function main() {
   const deployedContracts = readFileSync("deployed-contracts.json", "utf8");
   const deployedContractsJson = JSON.parse(deployedContracts);
 
-  const bridgePoolAddress = deployedContractsJson["localhost"]["bridgePool"];
+  const bridgePoolAddressSepolia = deployedContractsJson["sepolia"]["bridgePool"];
+  const bridgePoolAddressMumbai = deployedContractsJson["mumbai"]["bridgePool"];
 
-  //let provider = ethers.getDefaultProvider("homestead");
-  let httpProvider = new ethers.providers.JsonRpcProvider();
+  let httpProviderSepolia = new ethers.providers.JsonRpcProvider("https://rpc2.sepolia.org");
+  let walletSepolia = new ethers.Wallet("", httpProviderSepolia)
 
-  const contract = new ethers.Contract(
-    bridgePoolAddress,
+  const contractSepolia = new ethers.Contract(
+    bridgePoolAddressSepolia,
     BridgePoolABI,
-    httpProvider
+    httpProviderSepolia
   );
 
-  console.log(contract);
+  let httpProviderMumbai = new ethers.providers.JsonRpcProvider("https://rpc-mumbai.maticvigil.com");
+  let walletMumbai = new ethers.Wallet("", httpProviderMumbai)
 
-  contract.on("Deposit", async () => {
+  const contractMumbai = new ethers.Contract(
+    bridgePoolAddressMumbai,
+    BridgePoolABI,
+    httpProviderMumbai
+  );
+
+  contractSepolia.on("Deposit", (sender, receiver, amount) => {
     console.log("Deposit event triggered");
+    contractMumbai.connect(walletMumbai).executeBridge(receiver, amount, {gasLimit: 1000000});
+  });
+
+  contractMumbai.on("ExecuteBridge", () => {
+    console.log("ExecuteBridge event triggered");
   });
 }
 
