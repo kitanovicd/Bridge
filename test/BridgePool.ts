@@ -1,8 +1,8 @@
+import { ethers } from "hardhat";
 import { Wallet } from "ethers";
 import { MockProvider, solidity } from "ethereum-waffle";
 import { expect } from "chai";
 import chai from "chai";
-import { ethers } from "hardhat";
 
 chai.use(solidity);
 
