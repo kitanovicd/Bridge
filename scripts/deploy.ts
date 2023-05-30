@@ -1,11 +1,11 @@
 import hre from "hardhat";
 import { ethers } from "hardhat";
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync, readFileSync, existsSync } from "fs";
 
 async function main() {
   const networkName = hre.network.name;
 
-  console.log("Deploying contracts to network: " + networkName + "...");
+  console.log("Deploying contracts to network: " + networkName + " ...");
 
   const BridgeToken = await ethers.getContractFactory("BridgeToken");
   const bridgeToken = await BridgeToken.deploy([]);
@@ -15,8 +15,9 @@ async function main() {
   const bridgePool = await BridgePool.deploy(bridgeToken.address);
   await bridgePool.deployed();
 
-  const deployedContracts = readFileSync("deployed-contracts.json", "utf8");
-  const deployedContractsJson = JSON.parse(deployedContracts);
+  const deployedContractsJson = existsSync("deployed-contracts.json")
+    ? JSON.parse(readFileSync("deployed-contracts.json", "utf8"))
+    : {};
 
   console.log("Contracts deployed to network: " + networkName);
 
@@ -28,7 +29,7 @@ async function main() {
   writeFileSync(
     "deployed-contracts.json",
     JSON.stringify(deployedContractsJson, null, 2),
-    "utf8"
+    {flag: "w" , encoding: "utf8" }
   );
 }
 
