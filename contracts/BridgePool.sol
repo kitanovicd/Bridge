@@ -3,7 +3,6 @@ pragma solidity ^0.8.9;
 
 import {IERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "../node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {console} from "hardhat/console.sol";
 
 error CallerNotBridge();
 error NotEnoughStake();
@@ -47,12 +46,10 @@ contract BridgePool {
     }
 
     constructor(address tokenAddress) {
-        console.log("konstruktor");
         token = IERC20(tokenAddress);
     }
 
     function deposit(uint256 amount, address receiver) external {
-        console.log("dddddd");
         token.safeTransferFrom(msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, receiver, amount);

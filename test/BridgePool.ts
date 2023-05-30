@@ -1,8 +1,8 @@
-import { ethers } from "hardhat";
 import { Wallet } from "ethers";
 import { MockProvider, solidity } from "ethereum-waffle";
 import { expect } from "chai";
 import chai from "chai";
+import { ethers } from "hardhat";
 
 chai.use(solidity);
 
@@ -238,6 +238,103 @@ describe("BridgePool", () => {
         bridgePool
           .connect(staker)
           .executeBridge(receiver.address, amountToDeposit)
+      ).to.be.reverted;
+    });
+  });
+
+  describe("Vote to blacklist", () => {
+    it("Should be able to blacklist node with more than 50% voting power", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      let approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      let stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const stakerToRemove = wallets[2];
+
+      const stakerToRemoveAmountToStake = amountToStake.sub(1);
+
+      approve = await bridgeToken
+        .connect(stakerToRemove)
+        .approve(bridgePool.address, stakerToRemoveAmountToStake);
+      await approve.wait();
+
+      stake = await bridgePool
+        .connect(stakerToRemove)
+        .stake(stakerToRemoveAmountToStake);
+      await stake.wait();
+
+      const vote = await bridgePool
+        .connect(staker)
+        .voteToBlacklistNode(stakerToRemove.address);
+      await vote.wait();
+
+      const blacklistVotes = await bridgePool.blacklistVotes(
+        stakerToRemove.address
+      );
+      expect(blacklistVotes).to.equal(amountToStake);
+
+      const stakes = await bridgePool.stakes(stakerToRemove.address);
+      expect(stakes).to.equal(0);
+    });
+
+    it("Should not be able to blacklist node with less than 50% voting power", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      let approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      let stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const stakerToRemove = wallets[2];
+
+      approve = await bridgeToken
+        .connect(stakerToRemove)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      stake = await bridgePool.connect(stakerToRemove).stake(amountToStake);
+      await stake.wait();
+
+      const vote = await bridgePool
+        .connect(staker)
+        .voteToBlacklistNode(stakerToRemove.address);
+      await vote.wait();
+
+      const blacklistVotes = await bridgePool.blacklistVotes(
+        stakerToRemove.address
+      );
+      expect(blacklistVotes).to.equal(amountToStake);
+
+      const stakes = await bridgePool.stakes(stakerToRemove.address);
+      expect(stakes).to.equal(amountToStake);
+    });
+
+    it("Should revert if node is already blacklisted", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      let approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      let stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const stakerToRemove = wallets[2];
+
+      await expect(
+        bridgePool.connect(staker).voteToBlacklistNode(stakerToRemove.address)
       ).to.be.reverted;
     });
   });
