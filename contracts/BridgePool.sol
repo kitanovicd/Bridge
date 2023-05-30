@@ -39,7 +39,7 @@ contract BridgePool {
     event VoteToBlacklistNode(address indexed voter, address indexed node);
 
     modifier onlyBridgeNode() {
-        if (stakes[msg.sender] > 0) {
+        if (stakes[msg.sender] == 0) {
             revert CallerNotBridge();
         }
 
@@ -47,10 +47,12 @@ contract BridgePool {
     }
 
     constructor(address tokenAddress) {
+        console.log("konstruktor");
         token = IERC20(tokenAddress);
     }
 
     function deposit(uint256 amount, address receiver) external {
+        console.log("dddddd");
         token.safeTransferFrom(msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, receiver, amount);
@@ -73,6 +75,8 @@ contract BridgePool {
 
         token.safeTransfer(receiver, amountAfterFee);
         token.safeTransfer(msg.sender, fee);
+
+        nextAvailableTimestamp[msg.sender] = block.timestamp + LOCK_PERIOD;
 
         emit ExecuteBridge(msg.sender, receiver, amount);
     }

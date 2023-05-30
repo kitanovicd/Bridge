@@ -1,10 +1,8 @@
+import { ethers } from "hardhat";
 import { Wallet } from "ethers";
 import { MockProvider, solidity } from "ethereum-waffle";
 import { expect } from "chai";
 import chai from "chai";
-import { ethers } from "hardhat";
-import { BridgePool } from "../typechain-types/contracts";
-import { Contract } from "hardhat/internal/hardhat-network/stack-traces/model";
 
 chai.use(solidity);
 
@@ -113,5 +111,134 @@ describe("BridgePool", () => {
     });
   });
 
-  describe("Execute bridge", () => {});
+  describe("Execute bridge", () => {
+    it("Should be able to execute bridge", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const depositor = wallets[2];
+      const receiver = wallets[3];
+
+      const amountToDeposit = ethers.utils.parseEther("10");
+      const approveDeposit = await bridgeToken
+        .connect(depositor)
+        .approve(bridgePool.address, amountToDeposit);
+      await approveDeposit.wait();
+
+      const deposit = await bridgePool
+        .connect(depositor)
+        .deposit(amountToDeposit, receiver.address);
+      await deposit.wait();
+
+      const bridgePoolBalanceBefore = await bridgeToken.balanceOf(
+        bridgePool.address
+      );
+      const receiverBalanceBefore = await bridgeToken.balanceOf(
+        receiver.address
+      );
+      const stakerBalanceBefore = await bridgeToken.balanceOf(staker.address);
+
+      const executeBridge = await bridgePool
+        .connect(staker)
+        .executeBridge(receiver.address, amountToDeposit);
+      await executeBridge.wait();
+
+      const bridgePoolBalanceAfter = await bridgeToken.balanceOf(
+        bridgePool.address
+      );
+      const receiverBalanceAfter = await bridgeToken.balanceOf(
+        receiver.address
+      );
+      const stakerBalanceAfter = await bridgeToken.balanceOf(staker.address);
+
+      expect(bridgePoolBalanceAfter).to.equal(
+        bridgePoolBalanceBefore.sub(amountToDeposit)
+      );
+      expect(receiverBalanceAfter).to.equal(
+        receiverBalanceBefore.add(amountToDeposit.mul(95).div(100))
+      );
+      expect(stakerBalanceAfter).to.equal(
+        stakerBalanceBefore.add(amountToDeposit.mul(5).div(100))
+      );
+    });
+
+    it("Should not be able to execute bridge for amount bigger then 10% of stake portion", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const depositor = wallets[2];
+      const receiver = wallets[3];
+
+      const amountToDeposit = ethers.utils.parseEther("101");
+      const approveDeposit = await bridgeToken
+        .connect(depositor)
+        .approve(bridgePool.address, amountToDeposit);
+      await approveDeposit.wait();
+
+      const deposit = await bridgePool
+        .connect(depositor)
+        .deposit(amountToDeposit, receiver.address);
+      await deposit.wait();
+
+      await expect(
+        bridgePool
+          .connect(staker)
+          .executeBridge(receiver.address, amountToDeposit)
+      ).to.be.reverted;
+    });
+
+    it("Should not be able to execute bridge before lock period expires", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const depositor = wallets[2];
+      const receiver = wallets[3];
+
+      const amountToDeposit = ethers.utils.parseEther("10");
+      const approveDeposit = await bridgeToken
+        .connect(depositor)
+        .approve(bridgePool.address, amountToDeposit);
+      await approveDeposit.wait();
+
+      const deposit = await bridgePool
+        .connect(depositor)
+        .deposit(amountToDeposit, receiver.address);
+      await deposit.wait();
+
+      const executeBridge = await bridgePool
+        .connect(staker)
+        .executeBridge(receiver.address, amountToDeposit);
+      await executeBridge.wait();
+
+      await expect(
+        bridgePool
+          .connect(staker)
+          .executeBridge(receiver.address, amountToDeposit)
+      ).to.be.reverted;
+    });
+  });
 });
