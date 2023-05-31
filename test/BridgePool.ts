@@ -43,6 +43,7 @@ describe("BridgePool", () => {
       await approve.wait();
 
       const balanceBefore = await bridgeToken.balanceOf(depositor.address);
+      const lastDepositIDBefore = await bridgePool.lastDepositID();
 
       const deposit = await bridgePool
         .connect(depositor)
@@ -54,6 +55,9 @@ describe("BridgePool", () => {
 
       const bridgePoolBalance = await bridgeToken.balanceOf(bridgePool.address);
       expect(bridgePoolBalance).to.equal(amountToDeposit);
+
+      const lastDepositIDAfter = await bridgePool.lastDepositID();
+      expect(lastDepositIDAfter).to.equal(lastDepositIDBefore.add(1));
     });
   });
 
@@ -111,6 +115,89 @@ describe("BridgePool", () => {
     });
   });
 
+  describe("Unstake", () => {
+    it("Should be able to unstake tokens", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const amountToUnstake = ethers.utils.parseEther("10");
+      const stakerBalanceBefore = await bridgeToken.balanceOf(staker.address);
+      const bridgePoolBalanceBefore = await bridgeToken.balanceOf(
+        bridgePool.address
+      );
+
+      const unstake = await bridgePool.connect(staker).unstake(amountToUnstake);
+      await unstake.wait();
+
+      const stakedAmount = await bridgePool.stakes(staker.address);
+      expect(stakedAmount).to.equal(amountToStake.sub(amountToUnstake));
+
+      const totalStakedAmount = await bridgePool.totalStaked();
+      expect(totalStakedAmount).to.equal(amountToStake.sub(amountToUnstake));
+
+      const stakerBalanceAfter = await bridgeToken.balanceOf(staker.address);
+      expect(stakerBalanceAfter).to.equal(
+        stakerBalanceBefore.add(amountToUnstake)
+      );
+
+      const bridgePoolBalanceAfter = await bridgeToken.balanceOf(
+        bridgePool.address
+      );
+      expect(bridgePoolBalanceAfter).to.equal(
+        bridgePoolBalanceBefore.sub(amountToUnstake)
+      );
+    });
+
+    it("Should not be able to unstake more than staked", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const amountToUnstake = amountToStake.add(1);
+      await expect(bridgePool.connect(staker).unstake(amountToUnstake)).to.be
+        .reverted;
+    });
+
+    it("Should not be able to unstake before lock period expires", async () => {
+      const staker = wallets[1];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      const approve = await bridgeToken
+        .connect(staker)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      const stake = await bridgePool.connect(staker).stake(amountToStake);
+      await stake.wait();
+
+      const bridgeAmount = amountToStake.div(15);
+      const reveiver = wallets[2].address;
+      const executeBridge = await bridgePool
+        .connect(staker)
+        .executeBridge(0, reveiver, bridgeAmount);
+      await executeBridge.wait();
+
+      const amountToUnstake = amountToStake.sub(1);
+      await expect(bridgePool.connect(staker).unstake(amountToUnstake)).to.be
+        .reverted;
+    });
+  });
+
   describe("Execute bridge", () => {
     it("Should be able to execute bridge", async () => {
       const staker = wallets[1];
@@ -124,19 +211,8 @@ describe("BridgePool", () => {
       const stake = await bridgePool.connect(staker).stake(amountToStake);
       await stake.wait();
 
-      const depositor = wallets[2];
       const receiver = wallets[3];
-
       const amountToDeposit = ethers.utils.parseEther("10");
-      const approveDeposit = await bridgeToken
-        .connect(depositor)
-        .approve(bridgePool.address, amountToDeposit);
-      await approveDeposit.wait();
-
-      const deposit = await bridgePool
-        .connect(depositor)
-        .deposit(amountToDeposit, receiver.address);
-      await deposit.wait();
 
       const bridgePoolBalanceBefore = await bridgeToken.balanceOf(
         bridgePool.address
@@ -148,7 +224,7 @@ describe("BridgePool", () => {
 
       const executeBridge = await bridgePool
         .connect(staker)
-        .executeBridge(receiver.address, amountToDeposit);
+        .executeBridge(0, receiver.address, amountToDeposit);
       await executeBridge.wait();
 
       const bridgePoolBalanceAfter = await bridgeToken.balanceOf(
@@ -158,7 +234,9 @@ describe("BridgePool", () => {
         receiver.address
       );
       const stakerBalanceAfter = await bridgeToken.balanceOf(staker.address);
+      const isBridgeExecuted = await bridgePool.executedDeposits(0);
 
+      expect(isBridgeExecuted).to.equal(true);
       expect(bridgePoolBalanceAfter).to.equal(
         bridgePoolBalanceBefore.sub(amountToDeposit)
       );
@@ -199,7 +277,7 @@ describe("BridgePool", () => {
       await expect(
         bridgePool
           .connect(staker)
-          .executeBridge(receiver.address, amountToDeposit)
+          .executeBridge(0, receiver.address, amountToDeposit)
       ).to.be.reverted;
     });
 
@@ -231,13 +309,50 @@ describe("BridgePool", () => {
 
       const executeBridge = await bridgePool
         .connect(staker)
-        .executeBridge(receiver.address, amountToDeposit);
+        .executeBridge(0, receiver.address, amountToDeposit);
       await executeBridge.wait();
 
       await expect(
         bridgePool
           .connect(staker)
-          .executeBridge(receiver.address, amountToDeposit)
+          .executeBridge(0, receiver.address, amountToDeposit)
+      ).to.be.reverted;
+    });
+
+    it("Should not be able to execute bridge if bridge is already executed", async () => {
+      const staker1 = wallets[1];
+      const staker2 = wallets[2];
+
+      const amountToStake = ethers.utils.parseEther("1000");
+      let approve = await bridgeToken
+        .connect(staker1)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      let stake = await bridgePool.connect(staker1).stake(amountToStake);
+      await stake.wait();
+
+      approve = await bridgeToken
+        .connect(staker2)
+        .approve(bridgePool.address, amountToStake);
+      await approve.wait();
+
+      stake = await bridgePool.connect(staker2).stake(amountToStake);
+      await stake.wait();
+
+      const receiver = wallets[4];
+
+      const amountToDeposit = ethers.utils.parseEther("10");
+
+      const executeBridge = await bridgePool
+        .connect(staker1)
+        .executeBridge(0, receiver.address, amountToDeposit);
+      await executeBridge.wait();
+
+      await expect(
+        bridgePool
+          .connect(staker2)
+          .executeBridge(0, receiver.address, amountToDeposit)
       ).to.be.reverted;
     });
   });

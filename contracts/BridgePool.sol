@@ -7,6 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 error CallerNotBridge();
 error NotEnoughStake();
 error AlreadyBlacklisted();
+error AlreadyExecuted();
 error Locked();
 
 contract BridgePool {
@@ -17,24 +18,29 @@ contract BridgePool {
     uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
     uint256 public constant HUNDRED = 100;
 
+    uint256 public lastDepositID;
     uint256 public totalStaked;
     IERC20 public token;
 
     mapping(address => uint256) public stakes;
     mapping(address => uint256) public blacklistVotes;
     mapping(address => uint256) public lockedUntil;
- 
+    mapping(uint256 => bool) public executedDeposits;
+
     event Deposit(
+        uint256 indexed depostID,
         address indexed sender,
         address indexed receiver,
-        uint256 indexed amount
+        uint256 amount
     );
     event ExecuteBridge(
+        uint256 indexed depositID,
         address indexed node,
         address indexed receiver,
-        uint256 indexed amount
+        uint256 amount
     );
     event Stake(address indexed sender, uint256 indexed amount);
+    event Unstake(address indexed sender, uint256 indexed amount);
     event VoteToBlacklistNode(address indexed voter, address indexed node);
 
     modifier onlyBridgeNode() {
@@ -52,13 +58,20 @@ contract BridgePool {
     function deposit(uint256 amount, address receiver) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
 
-        emit Deposit(msg.sender, receiver, amount);
+        lastDepositID++;
+
+        emit Deposit(lastDepositID, msg.sender, receiver, amount);
     }
 
     function executeBridge(
+        uint256 originChainDepositID,
         address receiver,
         uint256 amount
     ) external onlyBridgeNode {
+        if (executedDeposits[originChainDepositID]) {
+            revert AlreadyExecuted();
+        }
+
         if (lockedUntil[msg.sender] > block.timestamp) {
             revert Locked();
         }
@@ -73,9 +86,10 @@ contract BridgePool {
         token.safeTransfer(receiver, amountAfterFee);
         token.safeTransfer(msg.sender, fee);
 
+        executedDeposits[originChainDepositID] = true;
         lockedUntil[msg.sender] = block.timestamp + LOCK_PERIOD;
 
-        emit ExecuteBridge(msg.sender, receiver, amount);
+        emit ExecuteBridge(originChainDepositID, msg.sender, receiver, amount);
     }
 
     function stake(uint256 amount) external {
@@ -89,6 +103,25 @@ contract BridgePool {
         totalStaked += amount;
 
         emit Stake(msg.sender, amount);
+    }
+
+    function unstake(uint256 amount) external {
+        //Does not need onlyBridge modifier
+        //If caller is not a bridge node, it will revert with NotEnoughStake
+        if (amount > stakes[msg.sender]) {
+            revert NotEnoughStake();
+        }
+
+        if (lockedUntil[msg.sender] > block.timestamp) {
+            revert Locked();
+        }
+
+        token.safeTransfer(msg.sender, amount);
+
+        stakes[msg.sender] -= amount;
+        totalStaked -= amount;
+
+        emit Unstake(msg.sender, amount);
     }
 
     function voteToBlacklistNode(address node) external onlyBridgeNode {
