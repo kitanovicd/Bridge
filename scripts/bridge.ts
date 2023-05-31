@@ -1,9 +1,12 @@
 import { ethers } from "ethers";
 import { readFileSync } from "fs";
 import { abi as BridgePoolABI } from "../artifacts/contracts/BridgePool.sol/BridgePool.json";
+import dotenv from "dotenv";
 
-const SEPOLIA_RPC_URL = "https://rpc2.sepolia.org";
-const MUMBAI_RPC_URL = "https://rpc-mumbai.maticvigil.com";
+dotenv.config();
+
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL;
 
 const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY;
 const MUMBAI_PRIVATE_KEY = process.env.MUMBAI_PRIVATE_KEY;
@@ -65,4 +68,7 @@ async function main() {
   });
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
