@@ -2,7 +2,6 @@ import { ethers } from "ethers";
 import { readFileSync } from "fs";
 import { abi as BridgePoolABI } from "../artifacts/contracts/BridgePool.sol/BridgePool.json";
 import { abi as BridgeTokenABI } from "../artifacts/contracts/BridgeToken.sol/BridgeToken.json";
-import { task } from "hardhat/config";
 import dotenv from "dotenv";
 
 dotenv.config();
