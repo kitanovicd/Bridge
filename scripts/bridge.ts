@@ -34,22 +34,34 @@ async function main() {
   let httpProviderMumbai = new ethers.providers.JsonRpcProvider(MUMBAI_RPC_URL);
   let walletMumbai = new ethers.Wallet(MUMBAI_PRIVATE_KEY!, httpProviderMumbai);
 
-  const contractMumbai = new ethers.Contract(
+  const bridgePoolMumbai = new ethers.Contract(
     bridgePoolAddressMumbai,
     BridgePoolABI,
     httpProviderMumbai
   );
 
   bridgePoolSepolia.on("Deposit", (sender, receiver, amount) => {
-    console.log("Deposit event triggered");
+    console.log("Deposit event triggered on Sepolia blockchain");
 
-    contractMumbai
+    bridgePoolMumbai
       .connect(walletMumbai)
       .executeBridge(receiver, amount, { gasLimit: 1000000 });
   });
 
-  contractMumbai.on("ExecuteBridge", () => {
-    console.log("ExecuteBridge event triggered");
+  bridgePoolMumbai.on("Deposit", (sender, receiver, amount) => {
+    console.log("Deposit event triggered on Mumbai blockchain");
+
+    bridgePoolSepolia
+      .connect(walletSepolia)
+      .executeBridge(receiver, amount, { gasLimit: 1000000 });
+  });
+
+  bridgePoolSepolia.on("ExecuteBridge", () => {
+    console.log("ExecuteBridge event triggered on Sepolia blockchain");
+  });
+
+  bridgePoolMumbai.on("ExecuteBridge", () => {
+    console.log("ExecuteBridge event triggered on Mumbai blockchain");
   });
 }
 
