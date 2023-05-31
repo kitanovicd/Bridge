@@ -2,9 +2,13 @@ import { ethers } from "ethers";
 import { readFileSync } from "fs";
 import { abi as BridgePoolABI } from "../artifacts/contracts/BridgePool.sol/BridgePool.json";
 import { abi as BridgeTokenABI } from "../artifacts/contracts/BridgeToken.sol/BridgeToken.json";
+import { task } from "hardhat/config";
+import dotenv from "dotenv";
 
-const SEPOLIA_RPC_URL = "https://rpc2.sepolia.org";
-const MUMBAI_RPC_URL = "https://rpc-mumbai.maticvigil.com";
+dotenv.config();
+
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL;
 
 const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY;
 const MUMBAI_PRIVATE_KEY = process.env.MUMBAI_PRIVATE_KEY;
@@ -55,23 +59,26 @@ async function main() {
 
   const approveSepoliaTx = await bridgeTokenSepolia
     .connect(walletSepolia)
-    .approve(bridgePoolSepolia.address, ethers.utils.parseEther("1"));
+    .approve(bridgePoolSepolia.address, ethers.utils.parseEther("10"));
   await approveSepoliaTx.wait();
 
   const stakeSepoliaTx = await bridgePoolSepolia
     .connect(walletSepolia)
-    .stake(ethers.utils.parseEther("1"));
+    .stake(ethers.utils.parseEther("10"));
   await stakeSepoliaTx.wait();
 
   const approveMumbaiTx = await bridgeTokenMumbai
     .connect(walletMumbai)
-    .approve(bridgeContractMumbai.address, ethers.utils.parseEther("1"));
+    .approve(bridgeContractMumbai.address, ethers.utils.parseEther("10"));
   await approveMumbaiTx.wait();
 
   const stakeMumbaiTx = await bridgeContractMumbai
     .connect(walletMumbai)
-    .stake(ethers.utils.parseEther("1"));
+    .stake(ethers.utils.parseEther("10"));
   await stakeMumbaiTx.wait();
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
