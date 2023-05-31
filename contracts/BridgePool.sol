@@ -12,6 +12,7 @@ error Locked();
 contract BridgePool {
     using SafeERC20 for IERC20;
 
+    uint256 public constant LOCK_PERIOD = 5 minutes;
     uint256 public constant MINIMUM_STAKE_AMOUNT = 10 ether;
     uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
     uint256 public constant HUNDRED = 100;
@@ -21,6 +22,7 @@ contract BridgePool {
 
     mapping(address => uint256) public stakes;
     mapping(address => uint256) public blacklistVotes;
+    mapping(address => uint256) public lockedUntil;
  
     event Deposit(
         address indexed sender,
@@ -57,6 +59,10 @@ contract BridgePool {
         address receiver,
         uint256 amount
     ) external onlyBridgeNode {
+        if (lockedUntil[msg.sender] > block.timestamp) {
+            revert Locked();
+        }
+
         if (amount > stakes[msg.sender] / 10) {
             revert NotEnoughStake();
         }
@@ -66,6 +72,8 @@ contract BridgePool {
 
         token.safeTransfer(receiver, amountAfterFee);
         token.safeTransfer(msg.sender, fee);
+
+        lockedUntil[msg.sender] = block.timestamp + LOCK_PERIOD;
 
         emit ExecuteBridge(msg.sender, receiver, amount);
     }
