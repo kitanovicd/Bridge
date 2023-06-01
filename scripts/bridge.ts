@@ -43,20 +43,20 @@ async function main() {
     httpProviderMumbai
   );
 
-  bridgePoolSepolia.on("Deposit", (sender, receiver, amount) => {
+  bridgePoolSepolia.on("Deposit", (depostID, sender, receiver, amount) => {
     console.log("Deposit event triggered on Sepolia blockchain");
 
     bridgePoolMumbai
       .connect(walletMumbai)
-      .executeBridge(receiver, amount, { gasLimit: 1000000 });
+      .executeBridge(depostID, receiver, amount, { gasLimit: 1000000 });
   });
 
-  bridgePoolMumbai.on("Deposit", (sender, receiver, amount) => {
+  bridgePoolMumbai.on("Deposit", (depostID, sender, receiver, amount) => {
     console.log("Deposit event triggered on Mumbai blockchain");
 
     bridgePoolSepolia
       .connect(walletSepolia)
-      .executeBridge(receiver, amount, { gasLimit: 1000000 });
+      .executeBridge(depostID, receiver, amount, { gasLimit: 1000000 });
   });
 
   bridgePoolSepolia.on("ExecuteBridge", () => {
