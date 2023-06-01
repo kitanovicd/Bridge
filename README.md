@@ -1,10 +1,10 @@
 # Introduction
 
-This repository contains *BridgeToken* and *BridgePool* smart contracts. Both smart contract should be deployed to Ethereum and Binance chains. This repository also contains script that should be executed by BRIDGE entity with node.
+This repository contains *BridgeToken* and *BridgePool* smart contracts. Both smart contract should be deployed to Sepolia and Mumbai chains. This repository also contains script that should be executed by node. This project represents bridge (not production ready) between this two chains. After initial mint of token inside deployment transaction, token can not be minter nor burned any more. When user wants to bridge tokens from origin to destination chain tokens will be transfered to *BridgePool* smart contract on origin chain and will be transfered from *BridgePool* contract on destination chain to receiving address. Bridging is done by node. To become node one must stake *BridgeToken* on *BridgePool* contract.
 
 ## BridgeToken
 
-Simple *ERC20* token that is mintable and burnable only by *BridgePool* contract. Initial supply is minted when smart contract is deployed. After initial *BridgePool* contract should maintain the same supply of token by burning bridged amount on origin chain.
+Simple *ERC20* token that is initialy minted in deployment transaction. Initial supply is minted when smart contract is deployed. After initial *BridgePool* contract should maintain the same supply of token by burning bridged amount on origin chain.
 
 ## BridgePool
 
