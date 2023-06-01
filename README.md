@@ -67,7 +67,7 @@ npx hardhat run scripts/deploy.js --network mumbai
 ```
 
 5. Run the scripts
-* To stake the tokens:
+* To stake the tokens and become node:
 ```bash
 npx hardhat run ./scripts/stake.ts
 ```
