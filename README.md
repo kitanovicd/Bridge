@@ -59,7 +59,7 @@ MUMBAI_PRIVATE_KEY=<Mumbai private key>
 ```
 
 4. Deploy the contracts<br>
-Change constructor parameters in line 12 in *deploy.ts*.
+* Change constructor parameters in line 12 in *deploy.ts*.
 
 ```bash
 npx hardhat run scripts/deploy.js --network sepolia
