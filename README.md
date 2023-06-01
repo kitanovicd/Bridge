@@ -14,7 +14,7 @@ The *BridgePool* contract implements a bridge pool that allows users to deposit 
 ```cpp
 function deposit(uint256 amount, address receiver)
 ```
-Allows a user to deposit tokens into the bridge pool, specifying the amount and the receiver's address.
+Allows a user to deposit tokens into the bridge pool, specifying the amount and the receiver's address. First, BrigdePool must have allowance to spend given amount of BridgeToken.
 
 ```cpp
 function executeBridge(uint256 originChainDepositID, address receiver, uint256 amount)
