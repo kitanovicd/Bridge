@@ -4,11 +4,11 @@ This repository contains *BridgeToken* and *BridgePool* smart contracts. Both sm
 
 ## BridgeToken
 
-Simple *ERC20* token that is initialy minted in deployment transaction. Initial supply is minted when smart contract is deployed. Initial supply represents total supply and can not be increased or decreased.
+Simple *ERC20* token with fixed supply that is initialy minted in deployment transaction. Initial supply is minted when smart contract is deployed. Initial supply represents total supply and can not be increased or decreased.
 
 ## BridgePool
 
-The *BridgePool* contract implements a bridge pool that allows users to deposit tokens on one blockchain and execute a bridge transfer to receive the equivalent tokens on the other blockchain. It also supports staking and voting to blacklist bridge nodes. Inside smart contract lock period is defined. When node executes a bridge transfer he can not execute another bridge transfer until lock period expires. Purpose of this functionality is to protect tokens on *BridgePool* smart contract from nodes. Also node can not execute bridge transfers if bridging amount is bigger then 10% of staked amount of node. With this two protections smart contract is protected from *bad* nodes. If one node executes fake transfer he will steal maximum of 10% tokens but will lose whole stake portion which is him. Node can lose stake portion if other nodes vote to blacklist him. When node successfully executes bridging transaction he is rewarded with 5% of bridging amount.
+The *BridgePool* contract implements a bridge pool that allows users to deposit tokens on one blockchain and execute a bridge transfer to receive the equivalent tokens on the other blockchain. It also supports staking and voting to blacklist bridge nodes. Inside smart contract lock period is defined. When node executes a bridge transfer he can not execute another bridge transfer until lock period expires. Purpose of this functionality is to protect tokens on *BridgePool* smart contract from nodes. Also node can not execute bridge transfers if bridging amount is bigger then 10% of staked amount of node. With this two protections smart contract is protected from *bad* nodes. If one node executes fake transfer he will steal maximum of 10% tokens but will lose whole stake portion. Node can lose stake portion if other nodes vote to blacklist him. When node successfully executes bridging transaction he is rewarded with 5% of bridging amount.
 
 ### Functions
 ```cpp
