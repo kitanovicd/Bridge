@@ -3,5 +3,7 @@ typechain-types
 artifacts
 cache
 
+.env
+
 deployed-contracts.json
 ```
