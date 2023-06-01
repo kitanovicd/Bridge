@@ -13,7 +13,7 @@ error Locked();
 contract BridgePool {
     using SafeERC20 for IERC20;
 
-    uint256 public constant LOCK_PERIOD = 5 minutes;
+    uint256 public constant LOCK_PERIOD = 1 days;
     uint256 public constant MINIMUM_STAKE_AMOUNT = 10 ether;
     uint256 public constant BRIDGE_FEE_PERCENTAGE = 5;
     uint256 public constant HUNDRED = 100;
