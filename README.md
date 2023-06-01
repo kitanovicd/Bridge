@@ -36,14 +36,43 @@ function voteToBlacklistNode(address node)
 ```
 Votes to blacklist a bridge node.
 
-To install dependencies run:
-<br>
-&nbsp;&nbsp; _npm install_
+## Setup and usage
 
-To deploy smart contracts run:
-<br>
-&nbsp;&nbsp; _npx hardhat run scripts/deploy.ts --network sepholia_
-<br>
-&nbsp;&nbsp; _npx hardhat run scripts/deploy.ts --network mumbai_
+1. Clone the repository
+```bash
+git clone https://github.com/kitanovicd/bridge.git
+```
+2. Install dependencies
+```bash
+cd bridge
+npm install
+```
+3. Configure environment variables
+* Create a .env file in the project root.
+* Set the following variables:
 
-Addresses of deployed contract should be stored inside _deployed-contracts.json_ file
+```makefile
+SEPOLIA_RPC_URL=<Sepolia RPC URL>
+MUMBAI_RPC_URL=<Mumbai RPC URL>
+SEPOLIA_PRIVATE_KEY=<Sepolia private key>
+MUMBAI_PRIVATE_KEY=<Mumbai private key>
+```
+
+4. Deploy the contracts<br>
+Change constructor parameters in line 12 in *deploy.ts*.
+
+```bash
+npx hardhat run scripts/deploy.js --network sepolia
+npx hardhat run scripts/deploy.js --network mumbai
+```
+
+5. Run the scripts
+* To stake the tokens:
+```bash
+npx hardhat run ./scripts/stake.ts
+```
+* To listen for deposit events and trigger bridge transfers:
+```bash
+npx hardhat run ./scripts/bridge.ts
+```
+

@@ -8,6 +8,7 @@ async function main() {
   console.log("Deploying contracts to network: " + networkName + " ...");
 
   const BridgeToken = await ethers.getContractFactory("BridgeToken");
+  // Change the arguments to the constructor of BridgeToken
   const bridgeToken = await BridgeToken.deploy([]);
   await bridgeToken.deployed();
 
@@ -29,7 +30,7 @@ async function main() {
   writeFileSync(
     "deployed-contracts.json",
     JSON.stringify(deployedContractsJson, null, 2),
-    {flag: "w" , encoding: "utf8" }
+    { flag: "w", encoding: "utf8" }
   );
 }
 
