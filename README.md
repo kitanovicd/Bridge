@@ -40,7 +40,7 @@ Votes to blacklist a bridge node.
 
 1. Clone the repository
 ```bash
-git clone https://github.com/kitanovicd/bridge.git
+git clone https://github.com/kitanovicd/Bridge.git
 ```
 2. Install dependencies
 ```bash
